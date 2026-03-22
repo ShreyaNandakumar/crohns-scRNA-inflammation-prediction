@@ -1,7 +1,7 @@
 import scanpy as sc
 import os
 
-top_folder = "/Users/mrunmayeewankhede/Desktop/cmu/Spring 26/Machine Learning for Scientists/Project/selected_49_samples"
+top_folder = "path_name"
 
 adatas = []
 
