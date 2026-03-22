@@ -4,8 +4,8 @@ import pandas as pd
 
 # paths
 metadata_file = "CD_PreTreatment_Metadata.csv"
-source_dir = "/Users/shreyanandakumar/Downloads/filtered_processed_data"
-target_dir = "/Users/shreyanandakumar/Downloads/selected_49_samples"
+source_dir = "/Users/shreyabalamurugan/filtered_processed_data"
+target_dir = "/Users/shreyabalamurugan/selected_49_samples"
 
 # make target folder
 os.makedirs(target_dir, exist_ok=True)
