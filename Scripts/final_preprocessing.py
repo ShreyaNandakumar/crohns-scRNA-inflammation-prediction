@@ -1,39 +1,44 @@
-import numpy as np
 import pandas as pd
 import scanpy as sc
 
-# ── paths ──────────────────────────────────────────────────────────────────────
-MERGED_PATH  = "/Users/shreyabalamurugan/merged_49_samples.h5ad"
-METADATA_CSV = "/Users/shreyabalamurugan/crohns-scRNA-inflammation-prediction/Scripts/CD_PreTreatment_Metadata.csv"
-OUTPUT_PATH  = "/Users/shreyabalamurugan/preprocessed.h5ad"
+# Paths
+MERGED_PATH = "/Users/shreyanandakumar/Downloads/merged_49_samples.h5ad"
+METADATA_CSV = "/Users/shreyanandakumar/crohns-scRNA-inflammation-prediction/Scripts/CD_PreTreatment_Metadata.csv"
+OUTPUT_PATH = "/Users/shreyanandakumar/Downloads/preprocessed_49_samples.h5ad"
 
-N_HVG        = 2000
-MIN_GENES    = 200
+# Parameters
+N_HVG = 2000
+MIN_GENES = 200
 MAX_PCT_MITO = 20
-MIN_CELLS    = 10
+MIN_CELLS = 10
 
-# ── step 1: load merged file ───────────────────────────────────────────────────
+# Step 1: load merged data
 combined = sc.read_h5ad(MERGED_PATH)
 print(f"Loaded: {combined.shape[0]:,} cells × {combined.shape[1]:,} genes")
 
-# ── step 2: attach metadata ────────────────────────────────────────────────────
+# Step 2: load metadata and map to samples
 meta = pd.read_csv(METADATA_CSV)
 meta["folder_name"] = meta["title"].str.replace("-reup", "", regex=False)
 
-# build a mapping from sample_id to metadata
+# Keep only one row per folder_name in case of accidental duplicates
+meta = meta.drop_duplicates(subset="folder_name")
+
 meta_dict = meta.set_index("folder_name").to_dict(orient="index")
 
-combined.obs["patient"]            = combined.obs["sample_id"].map(lambda x: meta_dict.get(x, {}).get("patient"))
-combined.obs["site"]               = combined.obs["sample_id"].map(lambda x: meta_dict.get(x, {}).get("site"))
-combined.obs["batch"]              = combined.obs["sample_id"].map(lambda x: meta_dict.get(x, {}).get("batch"))
-combined.obs["inflammation"]       = combined.obs["sample_id"].map(lambda x: meta_dict.get(x, {}).get("inflammation"))
+combined.obs["patient"] = combined.obs["sample_id"].map(lambda x: meta_dict.get(x, {}).get("patient"))
+combined.obs["site"] = combined.obs["sample_id"].map(lambda x: meta_dict.get(x, {}).get("site"))
+combined.obs["batch"] = combined.obs["sample_id"].map(lambda x: meta_dict.get(x, {}).get("batch"))
+combined.obs["inflammation"] = combined.obs["sample_id"].map(lambda x: meta_dict.get(x, {}).get("inflammation"))
 combined.obs["inflammation_score"] = combined.obs["sample_id"].map(lambda x: meta_dict.get(x, {}).get("inflammation score"))
 
-print("Metadata attached. Sample check:")
-print(combined.obs[["sample_id", "patient", "inflammation"]].drop_duplicates().head(10))
+print("\nMissing metadata counts:")
+print(combined.obs[["patient", "site", "batch", "inflammation", "inflammation_score"]].isna().sum())
 
-# ── step 3: QC filtering ───────────────────────────────────────────────────────
-combined.var["mt"] = combined.var_names.str.startswith("MT-")
+# Optional safety filter: keep only cells with mapped metadata
+combined = combined[combined.obs["patient"].notna()].copy()
+
+# Step 3: QC metrics
+combined.var["mt"] = combined.var_names.str.upper().str.startswith("MT-")
 
 sc.pp.calculate_qc_metrics(
     combined,
@@ -43,36 +48,46 @@ sc.pp.calculate_qc_metrics(
     inplace=True
 )
 
-before = combined.n_obs
-combined = combined[combined.obs["n_genes_by_counts"] >= MIN_GENES, :]
-combined = combined[combined.obs["pct_counts_mt"]     <= MAX_PCT_MITO, :]
+before_cells = combined.n_obs
+before_genes = combined.n_vars
+
+combined = combined[combined.obs["n_genes_by_counts"] >= MIN_GENES].copy()
+combined = combined[combined.obs["pct_counts_mt"] <= MAX_PCT_MITO].copy()
 sc.pp.filter_genes(combined, min_cells=MIN_CELLS)
 
-print(f"After QC: {combined.n_obs:,} cells ({before - combined.n_obs:,} removed) × {combined.n_vars:,} genes")
+print(f"\nAfter QC: {combined.n_obs:,} cells ({before_cells - combined.n_obs:,} removed)")
+print(f"After QC: {combined.n_vars:,} genes ({before_genes - combined.n_vars:,} removed)")
 
-# ── step 4: normalize + log1p ─────────────────────────────────────────────────
+# Step 4: save raw counts before normalization
 combined.layers["counts"] = combined.X.copy()
-sc.pp.normalize_total(combined, target_sum=1e4)
-sc.pp.log1p(combined)
 
-# ── step 5: highly variable gene selection ────────────────────────────────────
+# Step 5: highly variable genes on counts for seurat_v3
 sc.pp.highly_variable_genes(
     combined,
     n_top_genes=N_HVG,
     batch_key="batch",
     flavor="seurat_v3",
+    layer="counts",
     subset=False
 )
 
-print(f"HVGs selected: {combined.var['highly_variable'].sum()}")
+print(f"\nHVGs selected: {combined.var['highly_variable'].sum()}")
 
-# ── step 6: subset to HVGs + scale ───────────────────────────────────────────
+# Step 6: normalize and log-transform
+sc.pp.normalize_total(combined, target_sum=1e4)
+sc.pp.log1p(combined)
+
+# Step 7: keep only HVGs and scale
 combined = combined[:, combined.var["highly_variable"]].copy()
 sc.pp.scale(combined, max_value=10)
 
 print(f"After HVG subset: {combined.shape}")
 
-# ── step 7: encode labels ─────────────────────────────────────────────────────
+# Step 8: create labels
+print("\nInflammation categories before filtering:")
+print(combined.obs["inflammation"].value_counts(dropna=False))
+
+combined = combined[combined.obs["inflammation"].isin(["Inflamed", "Non_Inflamed"])].copy()
 combined.obs["label"] = (combined.obs["inflammation"] == "Inflamed").astype(int)
 
 print("\nClass balance:")
@@ -81,7 +96,7 @@ print(combined.obs["label"].value_counts())
 print("\nCells per patient:")
 print(combined.obs.groupby(["patient", "inflammation"]).size().unstack(fill_value=0))
 
-# ── step 8: save ──────────────────────────────────────────────────────────────
+# Step 9: save processed file
 combined.write_h5ad(OUTPUT_PATH)
-print(f"\nSaved to {OUTPUT_PATH}")
-print(f"X matrix shape for ML: {combined.X.shape}")
+print(f"\nSaved to: {OUTPUT_PATH}")
+print(f"Final X shape for ML: {combined.X.shape}")
