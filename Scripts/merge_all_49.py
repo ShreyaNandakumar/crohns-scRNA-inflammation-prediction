@@ -1,7 +1,7 @@
 import scanpy as sc
 import os
 
-top_folder = "/Users/mrunmayeewankhede/Desktop/cmu/Spring 26/Machine Learning for Scientists/Project/selected_49_samples"
+top_folder = "/Users/shreyanandakumar/Downloads/selected_49_samples"
 
 adatas = []
 
@@ -23,13 +23,13 @@ if len(adatas) == 0:
 
 combined = sc.concat(
     adatas,
-    join='outer',
-    label='sample_id',
-    keys=[a.obs['sample_id'][0] for a in adatas],
+    join='inner',
     index_unique='-'   # avoids cell barcode collisions across samples
 )
 
+combined.obs_names_make_unique()
+
 print("Combined shape:", combined.shape)
 
-combined.write("/Users/mrunmayeewankhede/Desktop/merged_49_samples.h5ad")
+combined.write("/Users/shreyanandakumar/Downloads/merged_49_samples.h5ad")
 print("Saved merged_49_samples.h5ad")
