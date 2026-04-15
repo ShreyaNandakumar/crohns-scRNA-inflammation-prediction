@@ -5,17 +5,25 @@ import os
 #STEP 1: load feature importance data and average across folds
 
 #make output directory for the plots
-os.makedirs("Results/XGBoost/plots", exist_ok=True)
+os.makedirs("Results/XGBoost/new_plots", exist_ok=True)
+
+base_dirs = {"best_auroc": "Results/XGBoost/AUROC_run",
+             "best_balanced": "Results/XGBoost/BALANCED_run"}
 
 #loop over both feature importance combos and make plots for each
-for combo_name in ["best_auroc", "best_balanced"]:
+for combo_name, folder in base_dirs.items():
 
     #load importances from all 5 folds and average them
     all_importances = []
 
     for fold in range(5):
-        imp_path = ("Results/XGBoost/feature_importance_" +
-                    combo_name + "_fold" + str(fold) + ".csv")
+        
+        if combo_name == "best_auroc":
+            folder = "Results/XGBoost/AUROC_run"
+        else:
+            folder = "Results/XGBoost/BALANCED_run"
+
+        imp_path = f"{folder}/feature_importance_{combo_name}_fold{fold}.csv"
         
         #read the csv manually 
         importances = []
@@ -47,9 +55,10 @@ for combo_name in ["best_auroc", "best_balanced"]:
     ax.tick_params(axis="x", rotation=45)
 
     plt.tight_layout()
+    plt.show()
 
     #save the plots
-    plot_path = "Results/XGBoost/plots/feature_importance_" + combo_name + ".png"
+    plot_path = "Results/XGBoost/new_plots/feature_importance_" + combo_name + ".png"
     plt.savefig(plot_path, dpi=150)
     plt.close()
 
