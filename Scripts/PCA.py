@@ -45,7 +45,7 @@ def pcaFit(xTrain, nComponents):
     Returns:
         components            : the principal component directions (nComponents x nGenes)
         mean                  : the mean of each gene across training samples
-        explainedVarianceRatio: fraction of total variance each PC captures
+        explainedVarianceRatio: fraction of TOTAL variance each PC captures
     """
 
     # step 1: compute the mean of each gene across all training samples
@@ -68,12 +68,19 @@ def pcaFit(xTrain, nComponents):
     # each row is one principal component direction
     components = Vt[:nComponents]  # shape: (nComponents, nGenes)
 
-    # step 5: compute how much variance each PC explains
+    # step 5: compute how much variance each kept PC explains
     # variance = singular value squared / (nSamples - 1)
     explainedVariance = (S[:nComponents] ** 2) / (xTrain.shape[0] - 1)
 
-    # convert to a ratio so values are between 0 and 1
-    explainedVarianceRatio = explainedVariance / explainedVariance.sum()
+    # step 6: compute total variance across ALL components (not just the ones we kept)
+    # this is the correct denominator so the ratio reflects the full dataset variance
+    # without this step the ratio would always sum to 100% which is misleading
+    totalVariance = (S ** 2) / (xTrain.shape[0] - 1)
+
+    # step 7: divide each component's variance by the TOTAL variance across all components
+    # now the ratio tells us what fraction of the full dataset variance each PC captures
+    # e.g. 0.35 means that PC explains 35% of all variation in the 2000 genes
+    explainedVarianceRatio = explainedVariance / totalVariance.sum()
 
     return components, mean, explainedVarianceRatio
 
@@ -221,7 +228,7 @@ for foldIndex, (trainIndices, testIndices) in enumerate(splits):
             "xTestPca":  xTestPca,     # test features in PCA space
             "yTrain":    yTrain,       # training labels
             "yTest":     yTest,        # test labels
-            "evRatio":   evRatio,      # variance explained by each PC
+            "evRatio":   evRatio,      # fraction of total variance each PC captures
         })
 
     print()  # blank line between folds for readability
@@ -239,20 +246,22 @@ for nComponents in nComponentsList:
         for foldData in pcaResults[nComponents]
     ])
 
-    print(f"  {nComponents} PCs: {avgVarianceExplained * 100:.1f}% variance explained")
+    # this should now show realistic numbers like 35%, 50%, 65%
+    # instead of 100% which was wrong
+    print(f"  {nComponents} PCs: {avgVarianceExplained * 100:.1f}% of total variance explained")
 
 
 # ── save results for kNN and XGBoost ──────────────────────────────────────────
 
 # save the pcaResults dictionary so teammates can load it directly
-# kNN (Person 2) and XGBoost (Person 3) will load this file and loop over folds
+# kNN and XGBoost will load this file and loop over folds
 np.save(outputPath, pcaResults)
 
 print(f"\nSaved PCA splits to {outputPath}")
 print("\nHow to load and use this file:")
 print("  pcaResults = np.load('Results/PCA/pca_splits.npy', allow_pickle=True).item()")
-print("  pcaResults[10]              -> list of 5 fold dicts for nComponents=10")
-print("  pcaResults[10][0]           -> results for fold 0")
+print("  pcaResults[10]                 -> list of 5 fold dicts for nComponents=10")
+print("  pcaResults[10][0]              -> results for fold 0")
 print("  pcaResults[10][0]['xTrainPca'] -> training features for fold 0")
 print("  pcaResults[10][0]['xTestPca']  -> test features for fold 0")
 print("  pcaResults[10][0]['yTrain']    -> training labels for fold 0")
