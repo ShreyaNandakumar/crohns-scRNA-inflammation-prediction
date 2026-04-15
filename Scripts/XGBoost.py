@@ -21,7 +21,7 @@ for fold_data in pca_results[10]:
           "  yTrain: " + str(fold_data['yTrain'].shape) +
           "  yTest: "  + str(fold_data['yTest'].shape)) 
     
-
+"""
 #STEP 2: Define the hyperparametrs and train XGBoost across folds
 
 #sample ration: 28 inflammed/21 non-inflammed (1.33 approx.)
@@ -87,6 +87,7 @@ for n_components in n_components_list:
                           " scalePos=" + str(scale_pos) +
                           " training done chattttt")
                         
+"""
 
 #STEP 3: Calculate the F1 and AUROC metrics for each fold 
 
@@ -139,6 +140,12 @@ def compute_AUROC(y_true, y_prob):
     
     return float(auroc)
 
+scale_pos_list = [1.0, 1.33, 2.0]
+n_est_list = [50, 100, 200]
+max_depth_list = [2, 3, 4]
+learning_rate_list = [0.01, 0.1, 0.3]
+n_components_list = [5, 10, 15]
+
 #STEP 4: Training loop - train XGBoost and compute metrics
 
 #store all results (one row for 1 hyperparamter combo)
@@ -182,8 +189,30 @@ for n_components in n_components_list:
                         #predicted probabilities for AUROC
                         y_prob_a = model.predict_proba(xTest)[:, 1]
 
-                        #predicted class labels for F1
+                        """#predicted class labels for F1
                         y_pred = model.predict(xTest)
+
+                        #compute metrics using scratch functions
+                        f1 = compute_MacroF1(yTest, y_pred)
+                        auroc = compute_AUROC(yTest, y_prob_a)"""
+
+                        #threshold tuning using the TRAINING set
+                        y_prob_train = model.predict_proba(xTrain)[:, 1]
+
+                        thresholds = np.arange(0.1, 0.9, 0.01)
+                        best_threshold = 0.5
+                        best_f1_train = -1
+
+                        for thresh in thresholds:
+                            y_train_pred_thresh = (y_prob_train >= thresh).astype(int)
+                            f1_train = compute_MacroF1(yTrain, y_train_pred_thresh)
+
+                            if f1_train > best_f1_train:
+                                best_f1_train = f1_train
+                                best_threshold = thresh
+                        
+                        #apply the best threshold to the TEST set
+                        y_pred = (y_prob_a >= best_threshold).astype(int)
 
                         #compute metrics using scratch functions
                         f1 = compute_MacroF1(yTest, y_pred)
@@ -263,6 +292,9 @@ for r in sorted_results[:5]:
 
 #STEP 6: Save feature importances for best combo per fold
 
+auroc_folder = "Results/XGBoost/AUROC_run"
+balanced_folder = "Results/XGBoost/BALANCED_run"
+
 #combo 1: highest AUROC - best at ranking but poor classification
 best_auroc = sorted_results[0]
 
@@ -309,8 +341,13 @@ for combo_name, combo in [("best_auroc", best_auroc), ("best_balanced", best_bal
         importances = model.feature_importances_
 
         #save to csv file
-        imp_path = ("Results/XGBoost/feature_importance_" +
-                    combo_name + "_fold" + str(fold) + ".csv")
+        if combo_name == "best_auroc":
+            folder = auroc_folder
+        else:
+            folder = balanced_folder
+
+        imp_path = f"{folder}/feature_importance_{combo_name}_fold{fold}.csv"
+
         with open(imp_path, "w") as f:
             f.write("pc,importance\n")
             for i, imp in enumerate(importances):
