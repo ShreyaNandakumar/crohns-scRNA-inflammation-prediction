@@ -55,7 +55,6 @@ for combo_name, folder in base_dirs.items():
     ax.tick_params(axis="x", rotation=45)
 
     plt.tight_layout()
-    plt.show()
 
     #save the plots
     plot_path = "Results/XGBoost/new_plots/feature_importance_" + combo_name + ".png"
