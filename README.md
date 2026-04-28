@@ -302,3 +302,6 @@ Results/XGBoost/plots/feature_importance_best_balanced.png
 - Perform within-cell-type modeling.
 - Apply stronger batch correction if needed.
 - Expand to larger sample sets.
+
+## Citations
+Balamurugan, S., Makkar, S., Nandakumar, S., & Wankhede, M. (2026). Crohn’s scRNA Inflammation Prediction. 02-620 Final Course Project, Carnegie Mellon University GitHub. [https://github.com/ShreyaNandakumar/crohns-scRNA-inflammation-prediction.git]
