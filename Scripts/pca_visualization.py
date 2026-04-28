@@ -7,30 +7,30 @@ X_PATH = "/Users/shreyanandakumar/Downloads/sample_level_X.npy"
 META_PATH = "/Users/shreyanandakumar/Downloads/sample_level_metadata.csv"
 OUTPUT_PREFIX = "/Users/shreyanandakumar/Downloads/pca_sample_level"
 
-# Step 1: load data
+# Load data
 X = np.load(X_PATH)
 meta = pd.read_csv(META_PATH)
 
 print("X shape:", X.shape)
 print("Metadata shape:", meta.shape)
 
-# Step 2: center data
+# Center data
 X_mean = np.mean(X, axis=0)
 X_centered = X - X_mean
 
-# Step 3: manual PCA using SVD
+# Manual PCA using SVD
 U, S, Vt = np.linalg.svd(X_centered, full_matrices=False)
 
-# principal components / scores
+# Principal components / scores
 X_pca = X_centered @ Vt.T
 
-# explained variance
+# Explained variance
 n_samples = X.shape[0]
 explained_variance = (S ** 2) / (n_samples - 1)
 explained_variance_ratio = explained_variance / explained_variance.sum()
 cumulative_variance_ratio = np.cumsum(explained_variance_ratio)
 
-# print top variance info
+# Print top variance info
 print("\nExplained variance ratio for first 10 PCs:")
 for i in range(min(10, len(explained_variance_ratio))):
     print(f"PC{i+1}: {explained_variance_ratio[i]:.4f}")
@@ -39,7 +39,7 @@ print("\nCumulative explained variance ratio for first 10 PCs:")
 for i in range(min(10, len(cumulative_variance_ratio))):
     print(f"PC1-PC{i+1}: {cumulative_variance_ratio[i]:.4f}")
 
-# Step 4: save PCA scores
+# Save PCA scores
 pc_columns = [f"PC{i+1}" for i in range(X_pca.shape[1])]
 pca_df = pd.DataFrame(X_pca, columns=pc_columns)
 pca_df = pd.concat([meta.reset_index(drop=True), pca_df], axis=1)
@@ -47,7 +47,7 @@ pca_df = pd.concat([meta.reset_index(drop=True), pca_df], axis=1)
 pca_df.to_csv(f"{OUTPUT_PREFIX}_scores.csv", index=False)
 print(f"\nSaved PCA scores to {OUTPUT_PREFIX}_scores.csv")
 
-# Step 5: scree plot
+# Scree plot
 plt.figure(figsize=(8, 5))
 plt.plot(range(1, len(explained_variance_ratio) + 1), explained_variance_ratio, marker='o')
 plt.xlabel("Principal Component")
@@ -57,7 +57,7 @@ plt.tight_layout()
 plt.savefig(f"{OUTPUT_PREFIX}_scree.png", dpi=300)
 plt.show()
 
-# Step 6: cumulative variance plot
+# Cumulative variance plot
 plt.figure(figsize=(8, 5))
 plt.plot(range(1, len(cumulative_variance_ratio) + 1), cumulative_variance_ratio, marker='o')
 plt.xlabel("Principal Component")
@@ -67,7 +67,7 @@ plt.tight_layout()
 plt.savefig(f"{OUTPUT_PREFIX}_cumulative_variance.png", dpi=300)
 plt.show()
 
-# Step 7: helper function for PCA scatter plots
+# Helper function for PCA scatter plots
 def plot_pca_scatter(df, color_col, title, output_file):
     plt.figure(figsize=(8, 6))
 
@@ -106,21 +106,19 @@ plot_pca_scatter(
     output_file=f"{OUTPUT_PREFIX}_by_inflammation.png"
 )
 
-# Optional plots if columns exist
-if "batch" in pca_df.columns:
-    plot_pca_scatter(
-        pca_df,
-        color_col="batch",
-        title="PCA of Sample-Level Data Colored by Batch",
-        output_file=f"{OUTPUT_PREFIX}_by_batch.png"
-    )
+plot_pca_scatter(
+    pca_df,
+    color_col="batch",
+    title="PCA of Sample-Level Data Colored by Batch",
+    output_file=f"{OUTPUT_PREFIX}_by_batch.png"
+)
 
-if "site" in pca_df.columns:
-    plot_pca_scatter(
-        pca_df,
-        color_col="site",
-        title="PCA of Sample-Level Data Colored by Site",
-        output_file=f"{OUTPUT_PREFIX}_by_site.png"
-    )
+
+plot_pca_scatter(
+    pca_df,
+    color_col="site",
+    title="PCA of Sample-Level Data Colored by Site",
+    output_file=f"{OUTPUT_PREFIX}_by_site.png"
+)
 
 print("\nDone.")
