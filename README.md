@@ -3,10 +3,10 @@
 Machine learning pipeline for classifying **inflamed vs non-inflamed Crohn’s disease biopsies** using **single-cell RNA-seq**, **PCA**, **kNN**, and **XGBoost**.
 
 ## Team
-- Shreya Nandakumar
 - Mrunmayee Wankhede
 - Samridhi Makkar
 - Shreya Balamurugan
+- Shreya Nandakumar
 
 ---
 
