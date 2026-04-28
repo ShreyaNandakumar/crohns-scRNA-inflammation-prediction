@@ -1,6 +1,6 @@
 import numpy as np
 
-# ── file paths ─────────────────────────────────────────────────────────────────
+# file paths
 # these are the sample-level files created by the preprocessing pipeline
 # X = gene expression matrix (49 samples x 2000 genes)
 # y = labels (1 = inflamed, 0 = non-inflamed)
@@ -13,7 +13,7 @@ groupsPath = "/Users/shreyabalamurugan/Machine Learning for Scientists/FINAL PRO
 outputPath = "Results/PCA/pca_splits.npy"
 
 
-# ── load the data ──────────────────────────────────────────────────────────────
+# load the data
 # np.load reads a .npy file back into a numpy array
 X      = np.load(xPath)
 y      = np.load(yPath)
@@ -25,7 +25,7 @@ print(f"Inflamed samples: {np.sum(y==1)}, Non-inflamed samples: {np.sum(y==0)}")
 print(f"Number of unique patients: {len(np.unique(groups))}")  # should be 16
 
 
-# ── PCA helper functions ───────────────────────────────────────────────────────
+# PCA helper functions
 
 def pcaFit(xTrain, nComponents):
     """
@@ -90,7 +90,7 @@ def pcaTransform(X, components, mean):
     Project data into PCA space using components and mean from training data.
 
     This works for BOTH train and test data.
-    The key rule: always use the training mean to center — never the test mean.
+    The key rule: always use the training mean to center and never the test mean.
     Using the test mean would be data leakage.
 
     Parameters:
@@ -113,7 +113,7 @@ def pcaTransform(X, components, mean):
     return xPca
 
 
-# ── grouped cross-validation splitter ─────────────────────────────────────────
+# grouped cross-validation splitter 
 
 def groupedKFoldSplits(groups, nFolds=5):
     """
@@ -163,7 +163,7 @@ def groupedKFoldSplits(groups, nFolds=5):
     return splits
 
 
-# ── run PCA inside each CV fold ────────────────────────────────────────────────
+# run PCA inside each CV fold 
 
 # we will try three different numbers of principal components
 # this lets us later compare which number works best for kNN and XGBoost
@@ -234,7 +234,7 @@ for foldIndex, (trainIndices, testIndices) in enumerate(splits):
     print()  # blank line between folds for readability
 
 
-# ── print variance explained summary ──────────────────────────────────────────
+# print variance explained summary 
 
 print("Variance explained (averaged across all folds):")
 
@@ -251,7 +251,7 @@ for nComponents in nComponentsList:
     print(f"  {nComponents} PCs: {avgVarianceExplained * 100:.1f}% of total variance explained")
 
 
-# ── save results for kNN and XGBoost ──────────────────────────────────────────
+# save results for kNN and XGBoost
 
 # save the pcaResults dictionary so teammates can load it directly
 # kNN and XGBoost will load this file and loop over folds
