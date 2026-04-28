@@ -295,7 +295,6 @@ Results/XGBoost/plots/feature_importance_best_balanced.png
 
 - Small sample size of 49 biopsies.
 - Possible gut site effect.
-- No explicit Harmony-based batch correction.
 - Sample-level aggregation may still reflect cell-type composition differences.
 
 ## Future Work
