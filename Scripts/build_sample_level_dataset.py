@@ -7,21 +7,21 @@ from scipy import sparse
 INPUT_PATH = "/Users/shreyanandakumar/Downloads/preprocessed_49_samples.h5ad"
 OUTPUT_PREFIX = "/Users/shreyanandakumar/Downloads/sample_level"
 
-# Step 1: load preprocessed AnnData
+# Load preprocessed AnnData
 adata = sc.read_h5ad(INPUT_PATH)
 print(f"Loaded AnnData: {adata.shape[0]:,} cells × {adata.shape[1]:,} genes")
 
-# Step 2: check required metadata columns
+# Check required metadata columns
 required_cols = ["sample_id", "patient", "label", "inflammation"]
 missing_cols = [col for col in required_cols if col not in adata.obs.columns]
 if missing_cols:
     raise ValueError(f"Missing required columns in adata.obs: {missing_cols}")
 
-# Step 3: get unique samples
+# Get unique samples
 sample_ids = adata.obs["sample_id"].unique()
 print(f"Number of unique samples: {len(sample_ids)}")
 
-# Step 4: aggregate mean expression per sample
+# Aggregate mean expression per sample
 X_sample_list = []
 metadata_rows = []
 
@@ -50,14 +50,14 @@ for sample_id in sample_ids:
         "site": sample_obs["site"]
     })
 
-# Step 5: create final arrays/dataframes
+# Create final arrays/dataframes
 X_sample = np.vstack(X_sample_list)
 sample_metadata = pd.DataFrame(metadata_rows)
 
 print("Sample-level feature matrix shape:", X_sample.shape)
 print("Sample-level metadata shape:", sample_metadata.shape)
 
-# Step 6: save outputs
+# Save outputs
 np.save(f"{OUTPUT_PREFIX}_X.npy", X_sample)
 np.save(f"{OUTPUT_PREFIX}_y.npy", sample_metadata["label"].values)
 np.save(f"{OUTPUT_PREFIX}_groups.npy", sample_metadata["patient"].values)
@@ -74,7 +74,7 @@ print(f"{OUTPUT_PREFIX}_groups.npy")
 print(f"{OUTPUT_PREFIX}_metadata.csv")
 print(f"{OUTPUT_PREFIX}_X.csv")
 
-# Step 7: sanity checks
+# Sanity checks
 print("\nClass balance at sample level:")
 print(sample_metadata["label"].value_counts())
 
