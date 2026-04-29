@@ -297,10 +297,6 @@ Results/XGBoost/plots/feature_importance_best_balanced.png
 - Apply stronger batch correction if needed.
 - Expand to larger sample sets.
 
-## References
-- Thomas, T., et al. A Longitudinal Single-Cell Atlas of Anti-Tumour Necrosis Factor Treatment 
-  in Inflammatory Bowel Disease. Nature Immunology, 2024.
-
 ## Contributors
 
 | Name | GitHub |
