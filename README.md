@@ -2,28 +2,6 @@
 
 Machine learning pipeline for classifying **inflamed vs non-inflamed Crohn’s disease biopsies** from **single-cell RNA-seq data**. Uses **PCA**, **kNN**, and **XGBoost** trained on 49 pre-treatment biopsies from GEO: GSE282122.
 
-## Pipeline
-
-```mermaid
-flowchart TD
-    A[GEO: GSE282122] --> B[Select 49 CD baseline biopsies\n16 patients · 28 inflamed / 21 non-inflamed]
-    B --> C[Merge + attach metadata]
-    C --> D[QC filtering\n145737 low-quality cells removed]
-    D --> E[Normalize + log1p]
-    E --> F[HVG selection\nTop 2000 genes · batch-aware]
-    F --> G[Scale\nZero mean · unit variance]
-    G --> H[Aggregate to sample level\n49 samples × 2000 genes]
-    H --> I[Exploratory PCA\nVisualize batch · inflammation · site]
-    I --> J[PCA inside grouped CV folds\nFit on train only · 5/10/15 PCs · by patient]
-    J --> K[kNN\nFrom scratch · k=1,3,5,7]
-    J --> L[XGBoost PCA\n243 hyperparameters]
-    J --> M[XGBoost raw\n2000 gene features]
-    K --> N[Evaluation\nMacro-F1 · AUROC · from scratch]
-    L --> N
-    M --> N
-    N --> O[Best: XGBoost raw · F1=0.792 · AUROC=0.816]
-```
-
 ## Contributors
 
 | Name | GitHub |
