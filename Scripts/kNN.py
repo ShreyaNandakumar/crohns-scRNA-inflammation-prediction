@@ -24,14 +24,14 @@ def euclideanDistances(xTest, xTrain):
     Returns distances : matrix of distances (nTest x nTrain)
                     distances[i][j] = Euclidean distance from test sample i to training sample j
     """
-    #sum od sqrd elements for test and training samples
+    #sum of sqrd elements for test and training samples
     testSqNorms = np.sum(xTest ** 2, axis = 1, keepdims = True)
     trainSqNorms = np.sum(xTrain ** 2, axis = 1, keepdims = True).T
     
     #matrix multiplication for 2xy term
     crossTerm = xTest @ xTrain.T
     
-    #calc and combining terms
+    #calculate and combine terms
     sqDistances = testSqNorms + trainSqNorms - 2 * crossTerm 
     sqDistances = np.maximum(sqDistances, 0.0)
 
@@ -58,7 +58,7 @@ def knnPredict(xTrain, yTrain, xTest, k):
     # computing euclidean distance from every test point to every training point 
     distances = euclideanDistances(xTest, xTrain)
 
-    #for each test sample, getting the indices of the k nearest training samples, sorting ascending order and then tae the first k value
+    #for each test sample, getting the indices of the k nearest training samples, sorting ascending order and then take the first k value
     neighborIndices = np.argsort(distances, axis = 1,)[:, :k]
 
     #look up the labels of those k neighbors
@@ -89,7 +89,7 @@ def knnPredict(xTrain, yTrain, xTest, k):
 
     return predictions, probabilities
 
-#fucntion for accuracy
+#function for accuracy
 def accuracy(yTrue, yPred):
     """
     Compute classification accuracy.
@@ -100,7 +100,7 @@ def accuracy(yTrue, yPred):
 
     Returns: accuracy as a float between 0 and 1
     """
-    #calcuating accuracy
+    #calculating accuracy
     correct = np.sum(yTrue == yPred)
     total = len(yTrue)
 
@@ -180,7 +180,7 @@ def F1_score(yTrue, yPred):
 
     return np.mean(f1Scored)
 
-#fuction for roc curve
+#function for roc curve
 def ROCurve(yTrue, yScores):
     """
     Compute the ROC curve (FPR, TPR) and AUROC from scratch.
