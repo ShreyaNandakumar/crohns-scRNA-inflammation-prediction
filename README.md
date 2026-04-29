@@ -6,7 +6,7 @@ Machine learning pipeline for classifying **inflamed vs non-inflamed Crohn’s d
 
 | Name | GitHub |
 |---|---|
-| Mrunmayee Wankhede | [@MrunmayeeWankhede]([https://github.com/mrunmayeew](https://github.com/MrunmayeeWankhede)) |
+| Mrunmayee Wankhede | [@MrunmayeeWankhede](https://github.com/MrunmayeeWankhede) |
 | Samridhi Makkar | [@samridhi1408](https://github.com/samridhi1408) |
 | Shreya Balamurugan | [@sbalamur02](https://github.com/sbalamur02) |
 | Shreya Nandakumar | [@ShreyaNandakumar](https://github.com/ShreyaNandakumar) |
