@@ -305,14 +305,14 @@ Results/XGBoost/plots/feature_importance_best_balanced.png
 
 | Name | GitHub |
 |---|---|
-| Mrunmayee Wankhede | [@MrunmayeeWankhede](https://github.com/MrunmayeeWankhede) |
-| Samridhi Makkar | [@samridhi1408](https://github.com/samridhi1408) |
 | Shreya Balamurugan | [@sbalamur02](https://github.com/sbalamur02) |
+| Samridhi Makkar | [@samridhi1408](https://github.com/samridhi1408) |
 | Shreya Nandakumar | [@ShreyaNandakumar](https://github.com/ShreyaNandakumar) |
+| Mrunmayee Wankhede | [@MrunmayeeWankhede](https://github.com/MrunmayeeWankhede) |
   
 ## Citation
 
-Wankhede, M., Balamurugan, S., Makkar, S., & Nandakumar, S. (2026). Predicting inflamed vs non-inflamed Crohn's tissue from single-cell RNA-seq. GitHub. https://github.com/ShreyaNandakumar/crohns-scRNA-inflammation-prediction
+Balamurugan, S., Makkar, S., Nandakumar, S., & Wankhede, M. (2026). Predicting inflamed vs non-inflamed Crohn's tissue from single-cell RNA-seq [Source code]. GitHub. https://github.com/ShreyaNandakumar/crohns-scRNA-inflammation-prediction
 
 ## Course Project
 **02-620: Machine Learning for Scientists** | Carnegie Mellon University — Spring 2026
