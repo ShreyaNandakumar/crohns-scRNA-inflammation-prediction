@@ -1,15 +1,18 @@
+#import statements
 import numpy as np 
 import matplotlib 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import os 
 
+#input and output directories
 pcaSplitsPath = "Results/PCA/pca_splits.npy"
 
 outputDir = "Results/kNN"
 
 pcaResults = np.load(pcaSplitsPath, allow_pickle=True).item()
 
+#function for vectorized euclidean distance
 def euclideanDistances(xTest, xTrain):
     """
     Calculate pairwise euclidean distances between every test and training sample.
@@ -21,17 +24,22 @@ def euclideanDistances(xTest, xTrain):
     Returns distances : matrix of distances (nTest x nTrain)
                     distances[i][j] = Euclidean distance from test sample i to training sample j
     """
-
+    #sum od sqrd elements for test and training samples
     testSqNorms = np.sum(xTest ** 2, axis = 1, keepdims = True)
     trainSqNorms = np.sum(xTrain ** 2, axis = 1, keepdims = True).T
+    
+    #matrix multiplication for 2xy term
     crossTerm = xTest @ xTrain.T
-
+    
+    #calc and combining terms
     sqDistances = testSqNorms + trainSqNorms - 2 * crossTerm 
     sqDistances = np.maximum(sqDistances, 0.0)
-    distances = np.sqrt(sqDistances)
 
+    #return the sqrt to get euclidean distance
+    distances = np.sqrt(sqDistances)
     return distances 
 
+#custom function predicting knn values
 def knnPredict(xTrain, yTrain, xTest, k):
     """
     Predict both labels and probabilities using k-Nearest Neighbors.
@@ -62,22 +70,26 @@ def knnPredict(xTrain, yTrain, xTest, k):
     #hard label predictions 
     predictions = np.zeros(xTest.shape[0], dtype = int)
 
+    # determine the majority vote for each test sample
     for i in range(xTest.shape[0]):
         labels = neighborLabels[i]
 
         countClass0 = np.sum(labels == 0)
         countClass1 = np.sum(labels == 1)
 
+        #std majority vote
         if countClass1 > countClass0:
             predictions[i] = 1
         elif countClass0 > countClass1:
             predictions[i] = 0
+        #tie breaker logic
         else: 
             nearestIdx = neighborIndices[i,0]
             predictions[i] = yTrain[nearestIdx]
 
     return predictions, probabilities
 
+#fucntion for accuracy
 def accuracy(yTrue, yPred):
     """
     Compute classification accuracy.
@@ -88,13 +100,13 @@ def accuracy(yTrue, yPred):
 
     Returns: accuracy as a float between 0 and 1
     """
-
+    #calcuating accuracy
     correct = np.sum(yTrue == yPred)
     total = len(yTrue)
 
     return correct / total
 
-
+#function for building confusion matrix
 def confusionmatrix(yTrue, yPred):
     """
     Compute a 2x2 confusion matrix for binary classification.
@@ -109,17 +121,18 @@ def confusionmatrix(yTrue, yPred):
 
     Returns: confusion matrix 
     """
-
+    
     tn = np.sum((yTrue == 0) & (yPred == 0))
     fp = np.sum((yTrue == 0) & (yPred == 1))
     fn = np.sum((yTrue == 1) & (yPred == 0))
     tp = np.sum((yTrue == 1) & (yPred == 1))
 
+    #rows are Actual (0, 1), columns are Predicted (0, 1)
     cm = np.array([[tn, fp],
                     [fn, tp]])
-    
     return cm 
 
+#function to calculate f1 score
 def F1_score(yTrue, yPred):
     """
     Compute the macro-averaged F1 score for binary classification.
@@ -138,10 +151,12 @@ def F1_score(yTrue, yPred):
     """
     f1Scored = []
 
+    # calculate metrics for both class 0 and class 1
     for cls in [0, 1]:
         truePositives = np.sum((yTrue == cls) & (yPred == cls))
         predictedPositives = np.sum(yPred == cls)
 
+        #precision calculation
         if predictedPositives == 0:
             precision = 0.0
         else: 
@@ -149,11 +164,13 @@ def F1_score(yTrue, yPred):
         
         actualPositives = np.sum(yTrue == cls)
 
+        #recall calculation
         if actualPositives == 0:
             recall = 0.0
         else: 
             recall = truePositives / actualPositives
 
+        #f1 calculations
         if precision + recall == 0:
             f1 = 0.0
         else: 
@@ -163,6 +180,7 @@ def F1_score(yTrue, yPred):
 
     return np.mean(f1Scored)
 
+#fuction for roc curve
 def ROCurve(yTrue, yScores):
     """
     Compute the ROC curve (FPR, TPR) and AUROC from scratch.
@@ -171,17 +189,21 @@ def ROCurve(yTrue, yScores):
 
     Returns: fpr, tpr, auroc 
     """
+
+    #extract unique prediction scores
     thresholds = np.unique(yScores)
     thresholds = np.sort(thresholds)[::-1]
 
+    #making the curve start at exactly the origin
     thresholds = np.concatenate([[thresholds[0] + 1.0], thresholds])
-
+    
     totalPositives = np.sum(yTrue == 1)
     totalNegatives = np.sum(yTrue == 0)
 
     fprList = []
     tprList = []
 
+    #evaluate TPR and FPR at every distinct probability threshold
     for thresh in thresholds:
         yPred = (yScores >= thresh).astype(int)
 
@@ -197,13 +219,14 @@ def ROCurve(yTrue, yScores):
     fpr = np.array(fprList)
     tpr = np.array(tprList)
 
+    #compute AUROC using the trapezoidal rule to integrate under the curve
     auroc = np.trapezoid(tpr, fpr)
 
     return fpr, tpr, auroc
 
 
-# running knn inside cross validation 
-
+#running knn cross validation execution loop
+#extract hyperparameters
 nComponentsList = sorted(pcaResults.keys())
 kValues = [1,3,5,7]
 nFolds = len(pcaResults[nComponentsList[0]])
@@ -213,10 +236,12 @@ print(f"nComponents to try: {nComponentsList}")
 print(f"k values to try:    {kValues}")
 print(f"Number of folds:    {nFolds}\n")
 
+# dictionary to store aggregates and raw metrics for every combination
 allResults = {}
 
 for nComponents in nComponentsList:
     for k in kValues:
+        #containers for the per fold metrics 
         foldAccuracies = []
         foldF1s = []
         foldCMs = []
@@ -224,6 +249,7 @@ for nComponents in nComponentsList:
         foldFprs = []
         foldTprs = []
         for foldIndex in range(nFolds):
+            #fetch presplit data for this fold
             foldData = pcaResults[nComponents][foldIndex]
 
             xTrainPca = foldData["xTrainPca"]
@@ -231,8 +257,10 @@ for nComponents in nComponentsList:
             yTrain    = foldData["yTrain"]
             yTest     = foldData["yTest"]
 
+            #prediction
             yPred, yProba = knnPredict(xTrainPca, yTrain, xTestPca, k)
 
+            #calculate and store fold metrics
             foldAcc = accuracy(yTest, yPred)
             foldF1  = F1_score(yTest, yPred)
             foldCM  = confusionmatrix(yTest, yPred)
@@ -245,6 +273,7 @@ for nComponents in nComponentsList:
             foldFprs.append(fpr)
             foldTprs.append(tpr)
 
+        #aggregate metrics across the nFolds
         meanAcc = np.mean(foldAccuracies)
         stdAcc  = np.std(foldAccuracies)
         meanF1  = np.mean(foldF1s)
@@ -252,8 +281,10 @@ for nComponents in nComponentsList:
         meanAuroc = np.mean(foldAurocs)
         stdAuroc  = np.std(foldAurocs)
 
+        #sum the confusion matrices to get a total count across all folds
         aggregateCM = np.sum(foldCMs, axis=0)
 
+        #store to dictionary
         allResults[(nComponents, k)] = {
             "foldAccuracies": foldAccuracies,
             "foldF1s":        foldF1s,
@@ -270,7 +301,7 @@ for nComponents in nComponentsList:
             "aggregateCM":    aggregateCM,
         }
 
-# summary table
+#summary table
 print("SUMMARY: kNN Results (mean ± std across 5 folds)")
 print(f"{'nPCs':<8} {'k':<6} {'Accuracy':<20} {'Macro F1':<20} {'AUROC':<20}")
 print("-" * 88)
@@ -278,6 +309,7 @@ print("-" * 88)
 bestKey = None
 bestF1  = -1.0
 
+#print formatted summary
 for nComponents in nComponentsList:
     for k in kValues:
         res = allResults[(nComponents, k)]
@@ -288,7 +320,7 @@ for nComponents in nComponentsList:
 
         print(f"{nComponents:<8} {k:<6} {accStr:<20} {f1Str:<20} {aurocStr:<20}")
 
-        # track the best (nComponents, k) by macro F1
+        #track the best by macro F1 (our key metric)
         if res["meanF1"] > bestF1:
             bestF1  = res["meanF1"]
             bestKey = (nComponents, k)
@@ -297,11 +329,11 @@ print("-" * 88)
 print(f"\nBest setting: nComponents={bestKey[0]}, k={bestKey[1]} "
     f"(macro F1 = {bestF1:.3f}, AUROC = {allResults[bestKey]['meanAuroc']:.3f})")
 
-
+#cache the single best result dictionary for plotting
 bestResult = allResults[bestKey]
 
 
-# save summary CSV (one row per hyperparameter combination) - main results
+#save summary CSV (one row per hyperparameter combination) - main results
 
 summaryRows = []
 
@@ -319,13 +351,13 @@ for nComponents in nComponentsList:
             round(res["stdF1"], 4),
             round(res["meanAuroc"], 4),
             round(res["stdAuroc"], 4),
-            int(aggCM[1, 1]),  # TP
-            int(aggCM[0, 0]),  # TN
-            int(aggCM[0, 1]),  # FP
-            int(aggCM[1, 0]),  # FN
+            int(aggCM[1, 1]),  
+            int(aggCM[0, 0]), 
+            int(aggCM[0, 1]),  
+            int(aggCM[1, 0]), 
         ])
 
-# write CSV manually (no pandas dependency needed)
+# write CSV manually 
 summaryPath = os.path.join(outputDir, "knn_results_summary.csv")
 header = "nComponents,k,meanAccuracy,stdAccuracy,meanMacroF1,stdMacroF1,meanAUROC,stdAUROC,TP,TN,FP,FN"
 
@@ -336,7 +368,7 @@ with open(summaryPath, "w") as f:
 
 print(f"\nSaved summary CSV to {summaryPath}")
 
-# save per-fold CSV (one row per fold per hyperparameter combination) - this has the detailed fold-by-fold breakdown
+#save per-fold CSV 
 
 foldRows = []
 
@@ -352,10 +384,10 @@ for nComponents in nComponentsList:
                 round(res["foldAccuracies"][foldIndex], 4),
                 round(res["foldF1s"][foldIndex], 4),
                 round(res["foldAurocs"][foldIndex], 4),
-                int(cm[1, 1]),  # TP
-                int(cm[0, 0]),  # TN
-                int(cm[0, 1]),  # FP
-                int(cm[1, 0]),  # FN
+                int(cm[1, 1]),  
+                int(cm[0, 0]),  
+                int(cm[0, 1]),  
+                int(cm[1, 0]),  
             ])
 
 foldPath = os.path.join(outputDir, "knn_results_per_fold.csv")
@@ -370,7 +402,7 @@ print(f"Saved per-fold CSV to {foldPath}")
 
 #plots
 
-#Aggregate confusion matrix heatmap for best setting 
+#aggregate confusion matrix heatmap for best setting 
 
 def plotConfusionMatrix(cm, title, savePath):
     """
@@ -384,14 +416,14 @@ def plotConfusionMatrix(cm, title, savePath):
 
     fig, ax = plt.subplots(figsize=(6, 5))
 
-    # show the matrix as a heatmap with blue colourmap
+    #show the matrix as a heatmap with blue colourmap
     cax = ax.imshow(cm, interpolation="nearest", cmap="Blues")
     fig.colorbar(cax, ax=ax, shrink=0.8)
 
-    # annotate each cell with its count
+    #annotate each cell with its count
     for row in range(cm.shape[0]):
         for col in range(cm.shape[1]):
-            # use white text on dark cells, black on light cells
+            #white text on dark cells, black on light cells
             cellValue = cm[row, col]
             maxVal = cm.max()
             textColour = "white" if cellValue > maxVal / 2 else "black"
@@ -399,7 +431,7 @@ def plotConfusionMatrix(cm, title, savePath):
                     ha="center", va="center", fontsize=20, fontweight="bold",
                     color=textColour)
 
-    # axis labels
+    #axis labels
     classNames = ["Non-Inflamed", "Inflamed"]
     ax.set_xticks([0, 1])
     ax.set_yticks([0, 1])
@@ -415,14 +447,14 @@ def plotConfusionMatrix(cm, title, savePath):
     print(f"  Saved: {savePath}")
 
 
-# aggregate confusion matrix for best hyperparameter setting
+#aggregate confusion matrix for best hyperparameter setting
 plotConfusionMatrix(
     bestResult["aggregateCM"],
     f"kNN Confusion Matrix (Aggregate)\nnPCs={bestKey[0]}, k={bestKey[1]}",
     os.path.join(outputDir, "knn_confusion_matrix_aggregate.png")
 )
 
-# per-fold confusion matrices in a single figure
+#per-fold confusion matrices in a single figure
 fig, axes = plt.subplots(1, nFolds, figsize=(4 * nFolds, 4))
 
 for foldIndex in range(nFolds):
@@ -459,13 +491,10 @@ plt.savefig(os.path.join(outputDir, "knn_confusion_matrix_per_fold.png"),
 plt.close()
 print(f"  Saved: {os.path.join(outputDir, 'knn_confusion_matrix_per_fold.png')}")
 
-
-# Accuracy and Macro F1 grouped bar chart
+#accuracy and macro F1 grouped bar chart
 
 fig, axes = plt.subplots(1, 2, figsize=(14, 6))
 
-# prepare data for the bar chart
-# x-axis: each (nPCs, k) combination
 barLabels = []
 accMeans  = []
 accStds   = []
@@ -484,14 +513,14 @@ for nComponents in nComponentsList:
 xPos = np.arange(len(barLabels))
 barWidth = 0.65
 
-# define colours: one colour per nComponents group
+#one colour per nComponents group
 colours = []
 colourMap = {5: "#4C72B0", 10: "#DD8452", 15: "#55A868"}
 for nComponents in nComponentsList:
     for k in kValues:
         colours.append(colourMap[nComponents])
 
-# accuracy bars
+#accuracy bars
 ax1 = axes[0]
 bars1 = ax1.bar(xPos, accMeans, barWidth, yerr=accStds,
                 color=colours, edgecolor="black", linewidth=0.5,
@@ -504,7 +533,7 @@ ax1.set_ylim(0, 1.0)
 ax1.axhline(y=28/49, color="gray", linestyle="--", linewidth=1, label="Majority baseline")
 ax1.legend(fontsize=10)
 
-# macro F1 bars
+#macro F1 bars
 ax2 = axes[1]
 bars2 = ax2.bar(xPos, f1Means, barWidth, yerr=f1Stds,
                 color=colours, edgecolor="black", linewidth=0.5,
@@ -515,7 +544,7 @@ ax2.set_xticks(xPos)
 ax2.set_xticklabels(barLabels, fontsize=8)
 ax2.set_ylim(0, 1.0)
 
-# add a legend for nComponents groups
+#add a legend for nComponents groups
 from matplotlib.patches import Patch
 legendHandles = [Patch(facecolor=colourMap[n], edgecolor="black", label=f"nPCs={n}")
                 for n in nComponentsList]
@@ -528,7 +557,7 @@ plt.close()
 print(f"  Saved: {barChartPath}")
 
 
-# Macro F1 line plot (k on x-axis, one line per nComponents)
+#macro F1 line plot 
 
 fig, ax = plt.subplots(figsize=(8, 5))
 
@@ -559,11 +588,11 @@ plt.close()
 print(f"  Saved: {linePlotPath}")
 
 
-#Plot 4: ROC Curve for best hyperparameter setting 
+#ROC Curve for best hyperparameter setting 
 
 fig, ax = plt.subplots(figsize=(8, 7))
 
-# plot per-fold ROC curves
+#plot per-fold ROC curves
 meanFprInterp = np.linspace(0, 1, 200)
 interpTprs = []
 
@@ -575,28 +604,28 @@ for foldIndex in range(nFolds):
     ax.plot(fpr, tpr, alpha=0.3, linewidth=1.2,
             label=f"Fold {foldIndex + 1} (AUROC = {auroc:.3f})")
 
-    # interpolate TPR onto a common FPR grid for computing mean curve
+    #interpolate TPR onto a common FPR grid
     interpTpr = np.interp(meanFprInterp, fpr, tpr)
-    interpTpr[0] = 0.0  # ensure curve starts at (0, 0)
+    interpTpr[0] = 0.0  
     interpTprs.append(interpTpr)
 
-# compute and plot the mean ROC curve
+#compute and plot the mean ROC curve
 meanTpr = np.mean(interpTprs, axis=0)
-meanTpr[-1] = 1.0  # ensure curve ends at (1, 1)
+meanTpr[-1] = 1.0  
 meanAuroc = bestResult["meanAuroc"]
 stdAuroc  = bestResult["stdAuroc"]
 
 ax.plot(meanFprInterp, meanTpr, color="blue", linewidth=2.5,
         label=f"Mean ROC (AUROC = {meanAuroc:.3f} ± {stdAuroc:.3f})")
 
-# shade ±1 std dev region
+#shade ±1 std dev region
 stdTpr = np.std(interpTprs, axis=0)
 tprUpper = np.minimum(meanTpr + stdTpr, 1)
 tprLower = np.maximum(meanTpr - stdTpr, 0)
 ax.fill_between(meanFprInterp, tprLower, tprUpper, color="blue", alpha=0.1,
                 label="± 1 std. dev.")
 
-# diagonal (random classifier)
+#diagonal
 ax.plot([0, 1], [0, 1], linestyle="--", color="gray", linewidth=1,
         label="Random (AUROC = 0.500)")
 
