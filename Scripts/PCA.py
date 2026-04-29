@@ -110,8 +110,8 @@ def groupedKFoldSplits(groups, nFolds=5):
 
 # run PCA inside each CV fold 
 
-# we will try three different numbers of principal components
-# this lets us later compare which number works best for kNN and XGBoost
+# three different numbers of principal components ->
+# compares which number works best for kNN and XGBoost
 nComponentsList = [5, 10, 15]
 
 # number of cross-validation folds
