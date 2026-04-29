@@ -304,4 +304,5 @@ Results/XGBoost/plots/feature_importance_best_balanced.png
 - Expand to larger sample sets.
 
 ## Citation
-Balamurugan, S., Makkar, S., Nandakumar, S., & Wankhede, M. (2026). Crohn’s scRNA Inflammation Prediction. [02-620 Final Project, Carnegie Mellon University] GitHub. https://github.com/ShreyaNandakumar/crohns-scRNA-inflammation-prediction.git
+
+Wankhede, M., Balamurugan, S., Makkar, S., & Nandakumar, S. (2026). Predicting inflamed vs non-inflamed Crohn's tissue from single-cell RNA-seq. GitHub. https://github.com/ShreyaNandakumar/crohns-scRNA-inflammation-prediction
