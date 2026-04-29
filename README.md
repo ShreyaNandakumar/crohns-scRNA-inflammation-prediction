@@ -1,12 +1,37 @@
 # Crohn’s scRNA Inflammation Prediction
 
-Machine learning pipeline for classifying **inflamed vs non-inflamed Crohn’s disease biopsies** using **single-cell RNA-seq**, **PCA**, **kNN**, and **XGBoost**.
+Machine learning pipeline for classifying **inflamed vs non-inflamed Crohn’s disease biopsies** from **single-cell RNA-seq data**. Uses **PCA**, **kNN**, and **XGBoost** trained on 49 pre-treatment biopsies from GEO: GSE282122.
 
-## Team
-- Mrunmayee Wankhede
-- Samridhi Makkar
-- Shreya Balamurugan
-- Shreya Nandakumar
+## Pipeline
+
+```mermaid
+flowchart TD
+    A[GEO: GSE282122] --> B[Select 49 CD baseline biopsies\n16 patients · 28 inflamed / 21 non-inflamed]
+    B --> C[Merge + attach metadata]
+    C --> D[QC filtering\n145737 low-quality cells removed]
+    D --> E[Normalize + log1p]
+    E --> F[HVG selection\nTop 2000 genes · batch-aware]
+    F --> G[Scale\nZero mean · unit variance]
+    G --> H[Aggregate to sample level\n49 samples × 2000 genes]
+    H --> I[Exploratory PCA\nVisualize batch · inflammation · site]
+    I --> J[PCA inside grouped CV folds\nFit on train only · 5/10/15 PCs · by patient]
+    J --> K[kNN\nFrom scratch · k=1,3,5,7]
+    J --> L[XGBoost PCA\n243 hyperparameters]
+    J --> M[XGBoost raw\n2000 gene features]
+    K --> N[Evaluation\nMacro-F1 · AUROC · from scratch]
+    L --> N
+    M --> N
+    N --> O[Best: XGBoost raw · F1=0.792 · AUROC=0.816]
+```
+
+## Contributors
+
+| Name | GitHub |
+|---|---|
+| Mrunmayee Wankhede | [@MrunmayeeWankhede]([https://github.com/mrunmayeew](https://github.com/MrunmayeeWankhede)) |
+| Samridhi Makkar | [@samridhi1408](https://github.com/samridhi1408) |
+| Shreya Balamurugan | [@sbalamur02](https://github.com/sbalamur02) |
+| Shreya Nandakumar | [@ShreyaNandakumar](https://github.com/ShreyaNandakumar) |
 
 ---
 
@@ -16,7 +41,7 @@ This project uses processed single-cell RNA-seq data from **GEO: GSE282122** to 
 
 The original data are cell-level, but the final machine learning task is performed at the **sample level**. After preprocessing, cells from each biopsy are aggregated into one biopsy-level expression profile, and classification is then performed on these biopsy-level vectors.
 
-We compare:
+This project compares:
 - **PCA** for dimensionality reduction
 - **kNN** as a baseline classifier in PCA space
 - **XGBoost** as a nonlinear classifier using PCA features and raw gene features
@@ -303,6 +328,13 @@ Results/XGBoost/plots/feature_importance_best_balanced.png
 - Apply stronger batch correction if needed.
 - Expand to larger sample sets.
 
+## References
+- Thomas, T., et al. A Longitudinal Single-Cell Atlas of Anti-Tumour Necrosis Factor Treatment 
+  in Inflammatory Bowel Disease. Nature Immunology, 2024.
+  
 ## Citation
 
 Wankhede, M., Balamurugan, S., Makkar, S., & Nandakumar, S. (2026). Predicting inflamed vs non-inflamed Crohn's tissue from single-cell RNA-seq. GitHub. https://github.com/ShreyaNandakumar/crohns-scRNA-inflammation-prediction
+
+## Course Project
+**02-620: Machine Learning for Scientists** | Carnegie Mellon University — Spring 2026
