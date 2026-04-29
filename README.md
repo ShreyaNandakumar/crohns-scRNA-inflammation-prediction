@@ -2,15 +2,6 @@
 
 Machine learning pipeline for classifying **inflamed vs non-inflamed Crohn’s disease biopsies** from **single-cell RNA-seq data**. Uses **PCA**, **kNN**, and **XGBoost** trained on 49 pre-treatment biopsies from GEO: GSE282122.
 
-## Contributors
-
-| Name | GitHub |
-|---|---|
-| Mrunmayee Wankhede | [@MrunmayeeWankhede](https://github.com/MrunmayeeWankhede) |
-| Samridhi Makkar | [@samridhi1408](https://github.com/samridhi1408) |
-| Shreya Balamurugan | [@sbalamur02](https://github.com/sbalamur02) |
-| Shreya Nandakumar | [@ShreyaNandakumar](https://github.com/ShreyaNandakumar) |
-
 ---
 
 ## Project summary
@@ -309,6 +300,15 @@ Results/XGBoost/plots/feature_importance_best_balanced.png
 ## References
 - Thomas, T., et al. A Longitudinal Single-Cell Atlas of Anti-Tumour Necrosis Factor Treatment 
   in Inflammatory Bowel Disease. Nature Immunology, 2024.
+
+## Contributors
+
+| Name | GitHub |
+|---|---|
+| Mrunmayee Wankhede | [@MrunmayeeWankhede](https://github.com/MrunmayeeWankhede) |
+| Samridhi Makkar | [@samridhi1408](https://github.com/samridhi1408) |
+| Shreya Balamurugan | [@sbalamur02](https://github.com/sbalamur02) |
+| Shreya Nandakumar | [@ShreyaNandakumar](https://github.com/ShreyaNandakumar) |
   
 ## Citation
 
